@@ -3,6 +3,7 @@ import Persons from './components/Persons.jsx'
 import Filter from './components/Filter.jsx'
 import PersonForm from './components/PersonForm.jsx'
 import crud from './services/crud.jsx'
+import Notification from './components/Notification.jsx'
 
 const App = () => { 
   const [persons, setPersons] = useState([])
@@ -10,6 +11,9 @@ const App = () => {
   const [newNumber, setNewNumber] = useState('')
   const [newFilter, setNewFilter] = useState('')
   const [showAll, setShowAll] = useState(true)
+  const [message, setMessage] = useState(null)
+  const [color, setColor] = useState('green')
+  const timeout = 3000 
 
   useEffect(() => {
     crud
@@ -34,19 +38,40 @@ const App = () => {
         }
         crud
           .update(existingPerson.id, updatedPerson)
-          .then(Response => {setPersons(persons.map(p => p.id !== existingPerson.id ? p : response.data))})
+          .then(response => {setPersons(persons.map(p => p.id !== existingPerson.id ? p : response.data))})
+          .catch(error => {
+            setColor('red')
+            setMessage(`Information of ${newName} has already been removed from server`)
+          })
+        setMessage(`Updated ${newName}`)
+        setTimeout(() => {
+        setColor('green')
+        setMessage(null)
+        }, timeout)
       }else{
-        console.log("No data was changed.")
+        setMessage("No changes were made");    
+        setTimeout(() => {
+         setMessage(null)
+        }, timeout)
       }
+
       
     }else if (persons.some(person => person.name === newName)){
-      window.alert(`${newName} is already added to the phonebook`)
+       setMessage(`${newName} is already added to the phonebook`)
+        setTimeout(() => {
+        setMessage(null)
+        }, timeout)
+      
     }else{
       crud
         .create(personObject)
         .then(Response => {
           setPersons(persons.concat(Response.data))
         })
+        setMessage(`Added ${newName}`)
+        setTimeout(() => {
+        setMessage(null)
+        }, timeout)
     }
   }
   
@@ -54,6 +79,15 @@ const App = () => {
     if (window.confirm(`Delete ${user}?`)){
       crud
         .remove(id)
+        .then(() => {setMessage(`Deleted ${user}`)})
+        .catch(error => {
+          setColor('red')
+          setMessage(`Information of ${user} has already been removed from server`)})
+        setTimeout(() => {
+        setMessage(null)
+        setColor('green')
+        }, timeout)
+        
     }else{
       console.log("Delete canceled")
     }
@@ -80,6 +114,7 @@ const App = () => {
 
   return (
     <div>
+      <Notification message={message} color={color} />
       <h2>Phonebook</h2>
         <Filter filter={newFilter} Handler={filterHandler} />
 
